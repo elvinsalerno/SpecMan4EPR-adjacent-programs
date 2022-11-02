@@ -1,16 +1,10 @@
 
+#This is for testing only this script
 input_directory=r'C:\Users\evsal\Google Drive\MagLab\LuPO4_Eu2plus'
-#input_directory=r'C:\Users\evsal\Google Drive\MagLab\Frank_Natia\CoAPSO_1uM_08092022\08162022'
-#input_directory=r'C:\Users\evsal\Google Drive\MagLab\Frank_Natia\CoAPSO_1uM_08092022'
-
-
 input_filename='Eu2LuPO4_5K_15dB_ELDOR_93.5to94.5GHz_ctr94GHz'
-input_filename='Eu2LuPO4_5K_15dB_t2_3.312T_T2'
-#input_filename='5uM_CoPhen_50K_10dB_pfT1_08162022_5'
-#input_filename='1uM_CoAPSO_5K_20dB_FSE'
-
-
 filename_in=input_directory+'\\'+input_filename
+
+filename_in="C:/Users/evsal/Google Drive/MagLab/Frank_Natia/CoAPSO_1uM_08092022/08162022/5uM_CoPhen_50K_10dB_pfT1_08162022_5"
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -47,16 +41,9 @@ class load_data():
 
         self.normalize=False
         self.im_re_magn=False
+        self.avg_exp=False
         self.active_integ_data=[]
         
-        #self.im_data=[]
-        #self.re_data=[]
-        #self.magn_data=[]
-
-
-        #print(self.exp_dimensionality)
-        #self.normalize_integrated()
-
         #Dictionary defining essential unit orders
         self.units_indices={"p":1e-12,"n":1e-9,"u":1e-6,"m":1e-3,"k":1e3,"M":1e6,"G":1e9}
 
@@ -134,19 +121,7 @@ class load_data():
             self.integrated_arr=self.data_in.copy()
             self.integrated_arr=np.append(self.integrated_arr,np.array([self.magn_fcn(self.data_in)]),axis=0)
             self.integrated_arr=self.integrated_arr.transpose((0, 2, 1))
-    '''
-    def normalize_integrated(self):
-        maximum=np.amax(self.active_integ_data)
-        self.integrated_arr_norm = self.active_integ_data.copy()
-        self.integrated_arr_norm = self.integrated_arr_norm/maximum
-    '''
-    '''
-    def set_active_integ_data(self):
-        if self.normalize==True:
-            self.active_integ_data=self.integrated_arr_norm
-        else:
-            self.active_integ_data=self.integrated_arr
-    '''
+
     def set_active_integ_data(self):
         
         if self.im_re_magn==True: #If true plot im/re
@@ -166,13 +141,18 @@ class load_data():
             else:
                 self.active_integ_data=[self.integrated_arr[-1]]
 
+        #average the data array if necessary        
+        if self.avg_exp==True:
+            if len(np.shape(self.active_integ_data)) >=3:
+                self.active_integ_data=np.mean(self.active_integ_data,axis=2)
+        else:
+            pass
+
     def set_n_traces(self,first_trace=str(0),last_trace=str(-1)):
-        #print(type(self.active_integ_data))
         first_trace=first_trace.replace(" ", "")
         last_trace=last_trace.replace(" ", "")
 
         #If they're not numbers, then set from 0:end
-        #print(np.shape(self.active_integ_data))
 
         if first_trace.isdigit()==False or first_trace=='':
             first_trace='0'
@@ -183,12 +163,9 @@ class load_data():
         else:
             xxx=[]
             for i in range(0,len(self.active_integ_data)):
-                #self.active_integ_data[i]=self.active_integ_data[i][int(first_trace):int(last_trace)]
                 xxx.append(self.active_integ_data[i][int(first_trace):int(last_trace)])
-            #xxx=np.array(xxx)
             self.exp_axis_modded=self.exp_axis_modded[int(first_trace):int(last_trace)]
             self.active_integ_data=np.array(xxx)
-        #print(type(self.active_integ_data))
     ###########################
 
 
@@ -204,16 +181,13 @@ class load_data():
 
 
     def modify_integ_x_axis(self,string_in):
-        #self.exp_axis_modded=self.exp_axes[0].copy()
         def str_to_math(innumb,stringaling):
             #Remove the whitespace
-            #stringaling="".join(stringaling.split())
             stringaling=stringaling.replace(" ", "")
             #split the string into a list of operators and numbers
             res = re.findall(r'[0-9\.]+|[^0-9\.]+', stringaling)
             #split the list pairwise 
             www=[res[i:i+2] for i in range(0, len(res), 2)]
-            #print(www)
             numby=innumb
             for i in range(0, len(www)):
                 if 'e-' in www[i][0]:
@@ -233,7 +207,6 @@ class load_data():
         #change the x axis, take the data in and copy it, then see if the matching units 
         #are relevant 
         self.exp_axis_modded=str_to_math(self.exp_axes[0].copy()/self.check_units(self.units_list[0][0]),string_in)
-        #print(self.units_list)
 
 
     def update_data_fcn(self,bl1,bl2,il1,il2,mathstring,first_trace_in=str(0),last_trace_in=str(-1)):
@@ -243,7 +216,6 @@ class load_data():
             self.closest_idx_integration(il1,il2)
 
         self.do_integration()
-        #self.normalize_integrated()
         self.set_active_integ_data()
 
         
@@ -254,10 +226,9 @@ class load_data():
         self.fitted_x_arr=[]
         self.fitted_y_arr=[]
         if len(np.shape(self.active_integ_data))==2:
-            #pass
+            print(self.filename)
             for j in range(0,len(self.active_integ_data)):
                 print('dataset',j)
-                #plt.plot(data_objects[i].exp_axis_modded[:],data_objects[i].active_integ_data[j][:])
                 fitted_x,fitted_y=self.fit_t1_t2(self.exp_axis_modded[:],self.active_integ_data[j][:],fit_data=fit_data,guess=guess,timescale=self.units_list[0])
                 self.fitted_x_arr.append(fitted_x)
                 self.fitted_y_arr.append(fitted_y)
@@ -265,14 +236,11 @@ class load_data():
         elif len(np.shape(self.active_integ_data))==3:
             xxx=np.array(self.active_integ_data)
             xxx=np.swapaxes(xxx,1,2)
-            
+            print(self.filename)
             for j in range(0,np.shape(self.active_integ_data)[0]):
                 for k in range (0,np.shape(self.active_integ_data)[2]):
                     print('dataset',j, k)
                     fitted_x,fitted_y=self.fit_t1_t2(self.exp_axis_modded[:], xxx[j,k,:],fit_data=fit_data,guess=guess,timescale=self.units_list[0])
-                    #plt.plot(data_objects[i].exp_axis_modded[:], xxx[j,k,:])
-                    #print(self.units_list[0])
-
                     self.fitted_x_arr.append(fitted_x)
                     self.fitted_y_arr.append(fitted_y)
 
@@ -315,21 +283,20 @@ class load_data():
 
         if fit_data=='t1' or fit_data=='t2' or fit_data=='2t2' or fit_data=='2t1':
             from scipy.optimize import curve_fit
-            #print('\nguess=',guess)
                 
             pars, pcov = curve_fit(expon,x_data,y_data, p0=guess,bounds=Boundz,maxfev=1000000)#,bounds=(0,np.inf),maxfev=3800)
         
             if fit_data=='t1' or fit_data=='t2':
                 plt.plot(times_sim,expon(times_sim,*pars),'r--')#,label=str(round(pars[1],2))+' '+timescale )
                 print('N_0 =',pars[0],'\n','rate1 =',pars[1]**-1,'\n' , 'lifetime =',pars[1],'\n','C =',pars[2],'\n')
-                #print('\n','N_0 =',pars[0],'\n','rate1 =',pars[1]**-1,timescale,'^-1' ,'\n' , 'lifetime =',pars[1],timescale,'\n','C =',pars[2])
 
-                #print('error of lifetime = ', round((np.sqrt(np.diag(pcov))[1]),3))
+                print('error of lifetime = ', np.sqrt(np.diag(pcov))[1])
                 
             elif fit_data=='2t2' or fit_data=='2t1':
                 plt.plot(times_sim,expon(times_sim,*pars),'r--')#,label=str(round(pars[1],2))+', '+str(round(pars[4],2))+' '+timescale )
-                #print('\n','N0_1 =',pars[0],'(',pars[0]/(pars[0]+pars[4]),')','\n','rate_1 =',pars[1]**-1,timescale,'^-1' ,'\n' , 'lifetime_1 =',pars[1],timescale,'\n','*******************','\n','N0_2 =',pars[4],'(',pars[4]/(pars[0]+pars[4]),')','\n','rate_2 =',pars[4]**-1,timescale,'^-1','\n','lifetime_2 =',pars[4],timescale,'\n','*****************','\n','C =',pars[2])
                 print('N0_1 =',pars[0],'(',pars[0]/(pars[0]+pars[4]),')','\n','rate_1 =',pars[1]**-1, '\n' , 'lifetime_1 =',pars[1],'\n','*******************','\n','N0_2 =',pars[4],'(',pars[4]/(pars[0]+pars[4]),')','\n','rate_2 =',pars[4]**-1,'\n','lifetime_2 =',pars[4],'\n','*****************','\n','C =',pars[2],'\n')
+            
+            
             else:
                 pass
             #plt.legend()
@@ -350,9 +317,9 @@ class load_data():
 if __name__=='__main__':
     xxx=load_data(filename_in)
     xxx.im_re_magn=True
+    xxx.avg_exp=False
 
     xxx.update_data_fcn(100e-9,700e-9,0e-9,1500e-9,'*1','0','20')
-    #xxx.normalize_integrated()
 
     for i in range(0,len(xxx.active_integ_data)):
         #plt.plot(xxx.exp_axes[0],xxx.integrated_arr_norm[i])
@@ -360,5 +327,4 @@ if __name__=='__main__':
     plt.show()
     plt.close()
 
-#self.active_integ_data
 

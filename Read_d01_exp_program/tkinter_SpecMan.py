@@ -55,6 +55,7 @@ class App(tk.Tk):
         self.normalize=False
         self.im_re_magn=False
         self.vlines=True
+        self.avg_exp=False
 
         # place a button on the root window
         ttk.Button(self,
@@ -111,6 +112,13 @@ class App(tk.Tk):
                 )
         self.toggle_imremagn_button.place(x=750, y=400)#grid(row=0,column=1)#,expand=True)
 
+        self.toggle_avg_exp_button=ttk.Button(self,
+                text='not averaged',width=20,
+                command=lambda:[self.average_fcn()]
+                )
+        self.toggle_avg_exp_button.place(x=550, y=500)#grid(row=0,column=1)#,expand=True)
+
+
         self.toggle_vlines_button=ttk.Button(self,
                 text='vlines on',width=20,
                 command=lambda:[self.vlines_fcn()]
@@ -124,7 +132,7 @@ class App(tk.Tk):
 
         #text entry box for filenames
         self.temp_in_txt = Entry(self,width=20,font=('TkDefaultFont 20'))
-        self.temp_in_txt.insert(0, "C:/Users/esalerno/Google Drive/MagLab/LuPO4_Eu2plus/Eu2LuPO4_5K_15dB_t2_3.312T_T2.dat")
+        self.temp_in_txt.insert(0, "C:/Users/evsal/Google Drive/MagLab/short_biradical_wintyer_break/1mM/ChirpEcho_4dB_93.5to94.5_t90_1.6us_100Kshots_holeat94.02")
         self.temp_in_txt.place(x=2, y=40)#grid(column=0, row=0)
 
         set_baseline_lims = Label(self, text="baseline limits (ns) 1, 2")
@@ -271,32 +279,38 @@ class App(tk.Tk):
     def normalize_integ_plot(self):
         self.normalize= not self.normalize
         if self.normalize==True:
-            self.toggle_norm_button['text']='Normalized'#.text.configure(text='Normalized')
+            self.toggle_norm_button['text']='Normalized'
         else:
             self.toggle_norm_button['text']='Not Normalized'
-            #self.toggle_norm_button.configure(text='Not Normalized') #equivalent way to write
         toggle_norm(self.data_objects)
-        #self.up
         self.update_plots()
     
     def re_im_magn_fcn(self):
         self.im_re_magn= not self.im_re_magn
         if self.im_re_magn==True:
-            self.toggle_imremagn_button['text']='im/re'#.text.configure(text='Normalized')
+            self.toggle_imremagn_button['text']='im/re'
         else:
             self.toggle_imremagn_button['text']='magn'
-            #self.toggle_norm_button.configure(text='Not Normalized') #equivalent way to write
         toggle_re_im_magn(self.data_objects)
         self.update_plots()
+
+    def average_fcn(self):
+        self.avg_exp= not self.avg_exp
+        if self.avg_exp==True:
+            self.toggle_avg_exp_button['text']='averaged'
+        else:
+            self.toggle_avg_exp_button['text']='not averaged'
+        toggle_avg_exp(self.data_objects)
+        self.update_plots()    
+    
             
     def vlines_fcn(self):
         self.vlines= not self.vlines
         if self.vlines==True:
-            self.toggle_vlines_button['text']='vlines on'#.text.configure(text='Normalized')
+            self.toggle_vlines_button['text']='vlines on'
         else:
             self.toggle_vlines_button['text']='vlines off'
-            #self.toggle_norm_button.configure(text='Not Normalized') #equivalent way to write
-        #toggle_re_im_magn(self.vlines)
+
         self.make_the_plots()
 
 

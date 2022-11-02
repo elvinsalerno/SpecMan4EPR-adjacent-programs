@@ -6,9 +6,8 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import matplotlib
 
-filename_list=[r'C:\Users\esalerno\Google Drive\MagLab\LuPO4_Eu2plus\Eu2LuPO4_5K_15dB_t2_3.312T_T2',r'C:/Users/esalerno/Google Drive/MagLab/Frank_Natia/CoAPSO_1uM_08092022/08162022/5uM_CoPhen_50K_10dB_pfT1_08162022_5']
+#This is for testing only this script
 filename_list=[r'C:\Users\esalerno\Google Drive\MagLab\LuPO4_Eu2plus\Eu2LuPO4_5K_15dB_t2_3.312T_T2']
-#filename_list=[r'C:/Users/esalerno/Google Drive/MagLab/Frank_Natia/CoAPSO_1uM_08092022/08162022/5uM_CoPhen_50K_10dB_pfT1_08162022_5']
 
 
 
@@ -74,13 +73,13 @@ def plot_the_re_im_transients(data_objects,i1,i2,bl1,bl2,DPI=100,plot_vlines=Tru
                 else:
                     pass
                 axs[j].set_xlabel(data_objects[i].signal_labels[j])
-                #WTF is this 
-                if 1==0:
-                    axs[j].set_ylabel(data_objects[i].signal_labels[j])
-                else:
-                    pass
+
+
+                #Label the y axes
+                axs[j].set_ylabel(data_objects[i].signal_labels[j])
+
     plt.xlabel('ns')
-    #plt.x
+
     plt.subplots_adjust(bottom=0.25,left=0.25)
 
     return fig
@@ -142,6 +141,10 @@ def toggle_re_im_magn(data_objects,):
         data_objects[i].im_re_magn= not data_objects[i].im_re_magn
         data_objects[i].set_active_integ_data()
 
+def toggle_avg_exp(data_objects,):
+    for i in range (0,len(data_objects)):
+        data_objects[i].avg_exp= not data_objects[i].avg_exp
+        data_objects[i].set_active_integ_data()  
 
 def plot_integrated(data_objects,DPI=100,x_label_in=False,fit_data='None',guess=[],timescale='none'):
     plt.close(3)
@@ -194,93 +197,6 @@ def handle_fitted(data_objects,fit_data='None',guess=[],timescale='none'):
         for j in range(0,len(data_objects[i].fitted_x_arr)):
             plt.plot(data_objects[i].fitted_x_arr[j],data_objects[i].fitted_y_arr[j],'r--')
 
-        
-"""
-def fit_data_and_plot(data_objects,fit_data='t2',guess=[],timescale='ns'):
-    for i in range(0,len(data_objects)):
-        print(data_objects[i].filename)
-        if len(np.shape(data_objects[i].active_integ_data))==2:
-            #pass
-            for j in range(0,len(data_objects[i].active_integ_data)):
-                print('dataset',j)
-                #plt.plot(data_objects[i].exp_axis_modded[:],data_objects[i].active_integ_data[j][:])
-                fit_t1_t2(data_objects[i].exp_axis_modded[:],data_objects[i].active_integ_data[j][:],fit_data=fit_data,guess=guess,timescale=data_objects[i].units_list[0])
-                print(data_objects[i].units_list[0])
-        elif len(np.shape(data_objects[i].active_integ_data))==3:
-            xxx=np.array(data_objects[i].active_integ_data)
-            xxx=np.swapaxes(xxx,1,2)
-            
-            for j in range(0,np.shape(data_objects[i].active_integ_data)[0]):
-                for k in range (0,np.shape(data_objects[i].active_integ_data)[2]):
-                    print('dataset',j, k)
-                    fit_t1_t2(data_objects[i].exp_axis_modded[:], xxx[j,k,:],fit_data=fit_data,guess=guess,timescale=data_objects[i].units_list[0])
-                    #plt.plot(data_objects[i].exp_axis_modded[:], xxx[j,k,:])
-                    print(data_objects[i].units_list[0])
-
-
-def fit_t1_t2(x_data,y_data,fit_data='no',guess=[],timescale='ns'):
-    if fit_data=='t1' or fit_data=='t2':
-        if len(guess)!=3:
-            if timescale=='us':
-                guess=[6,1000, 1]
-            elif timescale=='ms':
-                guess=[6,0.001,1]
-            else:
-                guess=[6,1000,1]
-                
-    if fit_data=='2t1' or fit_data=='2t2':
-        if len(guess)!=5:
-            if timescale=='us':
-                guess=[0.6,3, 1.5, 0.4, 2]
-            elif timescale=='ms':
-                guess=[0.6,0.001,1,0.4,0.002 ]
-            else:
-                guess=[0.6,3000,3, 0.4, 2000]
-
-    if fit_data=='t2':
-        def expon(t,N0,k,c):
-            return N0*np.exp(-t/k)+c
-    elif fit_data=='t1':
-        def expon(t,N0,k, c):
-            return -N0*np.exp(-t/k) + c
-    elif fit_data=='2t1':
-        def expon(t,N0_1,k1, c,N0_2,k2):
-            return -(N0_1/(N0_1+N0_2))*np.exp(-t/k1) - (N0_2/(N0_1+N0_2))*np.exp(-t/k2) + c
-    elif fit_data=='2t2':
-        def expon(t,N0_1,k1,c,N0_2,k2):
-            return (N0_1/(N0_1+N0_2))*np.exp(-t/k1)+(N0_2/(N0_1+N0_2))*np.exp(-t/k2)+c
-
-
-    times_sim=np.linspace(x_data[0],x_data[-1],1000)
-    Boundz=(0,np.inf)
-
-    if fit_data=='t1' or fit_data=='t2' or fit_data=='2t2' or fit_data=='2t1':
-        from scipy.optimize import curve_fit
-        #print('\nguess=',guess)
-            
-        pars, pcov = curve_fit(expon,x_data,y_data, p0=guess,bounds=Boundz,maxfev=1000000)#,bounds=(0,np.inf),maxfev=3800)
-    
-        if fit_data=='t1' or fit_data=='t2':
-            plt.plot(times_sim,expon(times_sim,*pars),'r--')#,label=str(round(pars[1],2))+' '+timescale )
-            print('N_0 =',pars[0],'\n','rate1 =',pars[1]**-1,'\n' , 'lifetime =',pars[1],'\n','C =',pars[2],'\n')
-            #print('\n','N_0 =',pars[0],'\n','rate1 =',pars[1]**-1,timescale,'^-1' ,'\n' , 'lifetime =',pars[1],timescale,'\n','C =',pars[2])
-
-            #print('error of lifetime = ', round((np.sqrt(np.diag(pcov))[1]),3))
-            
-        elif fit_data=='2t2' or fit_data=='2t1':
-            plt.plot(times_sim,expon(times_sim,*pars),'r--')#,label=str(round(pars[1],2))+', '+str(round(pars[4],2))+' '+timescale )
-            #print('\n','N0_1 =',pars[0],'(',pars[0]/(pars[0]+pars[4]),')','\n','rate_1 =',pars[1]**-1,timescale,'^-1' ,'\n' , 'lifetime_1 =',pars[1],timescale,'\n','*******************','\n','N0_2 =',pars[4],'(',pars[4]/(pars[0]+pars[4]),')','\n','rate_2 =',pars[4]**-1,timescale,'^-1','\n','lifetime_2 =',pars[4],timescale,'\n','*****************','\n','C =',pars[2])
-            print('N0_1 =',pars[0],'(',pars[0]/(pars[0]+pars[4]),')','\n','rate_1 =',pars[1]**-1, '\n' , 'lifetime_1 =',pars[1],'\n','*******************','\n','N0_2 =',pars[4],'(',pars[4]/(pars[0]+pars[4]),')','\n','rate_2 =',pars[4]**-1,'\n','lifetime_2 =',pars[4],'\n','*****************','\n','C =',pars[2],'\n')
-        else:
-            pass
-        #plt.legend()
-
-    else:
-        pass
-
-
-#fit_t1_t2('t1',np.array([1,2,3,4,5,6,7,8,9,10]),np.array([2,4,6,8,10,12,14,16,18,20]))
-"""
 
 def save_fig_fcn(figurino,filename_to_save="saved_figure"):
     from PIL import Image
@@ -299,7 +215,6 @@ def save_fig_fcn(figurino,filename_to_save="saved_figure"):
     # (2) load this image into PIL
     png2 = Image.open(png1)
     
-    #Image_directory=r"C:\Users\evsal\Google Drive\MagLab\Python\comprehensive_program"
     ##################################
     import os
     #Get directory where this script is running,
@@ -329,14 +244,28 @@ def save_fig_fcn(figurino,filename_to_save="saved_figure"):
 
     ###############################################################################
 
-
-import os
 def save_data_fcn(data_objects):
     ##############################################################################
     ##############################save file out###################################
     
     for i in range(0,len(data_objects)):
-        input_directory=(os.path.dirname(__file__))
+        ##################################
+        import os
+        #Get directory where this script is running,
+        #Then add '\data_out' to it for desired directory
+        MYDIR = [(os.path.dirname(__file__)),'data_out']
+        MYDIR =  '\\'.join(MYDIR)
+        # If folder doesn't exist, then create it.
+        if not os.path.isdir(MYDIR):
+            os.makedirs(MYDIR)
+            print("created folder : ", MYDIR)
+        else:
+            pass
+            #print(MYDIR, "folder already exists.")
+        #################################
+
+        input_directory=MYDIR
+
         filenameout=(os.path.basename(data_objects[i].filename))
         filenameout1="".join(["\\",filenameout])
         filenameoutcomby=input_directory+filenameout1+'_out.txt'
@@ -348,7 +277,6 @@ def save_data_fcn(data_objects):
             data_labels=data_objects[i].signal_labels
         
         if len(np.shape(data_objects[i].active_integ_data))==2:
-            #a = np.array([times_final,integs]).T
             a=np.array(data_objects[i].active_integ_data).T
             a=np.insert(a,0,data_objects[i].exp_axis_modded,axis=1)
 
@@ -359,8 +287,6 @@ def save_data_fcn(data_objects):
             f = open(filenameoutcomby, "w")
             np.savetxt(f, a, delimiter=',',header=HEAD,comments='n_signals,n_x,n_y\n'+','.join(map(str,np.shape(data_objects[i].active_integ_data)))+',1'+'\n')#, header=column_names, comments="")
             f.close()
-
-            #print(np.shape(a))
 
         elif len(np.shape(data_objects[i].active_integ_data))==3:
             a=[]
@@ -375,9 +301,7 @@ def save_data_fcn(data_objects):
 
             data_labels=(data_labels)*np.shape(data_objects[i].active_integ_data)[2]
 
-            #print(np.shape(data_objects[i].active_integ_data))
             HEAD=data_objects[i].units_list[0]+','+",".join(data_labels)
-            #print(HEAD)
             f = open(filenameoutcomby, "w")
             np.savetxt(f, a, delimiter=',', header=HEAD,comments='n_signals,n_x,n_y\n'+','.join(map(str,np.shape(data_objects[i].active_integ_data)))+'\n')#comments='(x),(y)*'+str(np.shape(data_objects[i].active_integ_data)[2])+'\n')
             f.close()
