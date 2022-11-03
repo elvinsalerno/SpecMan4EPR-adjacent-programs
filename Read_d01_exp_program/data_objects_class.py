@@ -7,6 +7,9 @@ input_filename='Eu2LuPO4_5K_15dB_ELDOR_93.5to94.5GHz_ctr94GHz'
 #input_directory=r"C:\Users\esalerno\Google Drive\MagLab\short_biradical_wintyer_break\1mM"
 #input_filename="ChirpEcho_4dB_93.5to94.5_t90_1.6us_100Kshots_holeat94.02"
 
+input_directory=r"C:\Users\esalerno\Google Drive\MagLab\Miguel\MG-III-530_Gd3_C3\MG_VIII_530_Gd3_1percent\Round4\12202022\hole_burning_definitive"
+input_filename="Boldenhausen_Fourier_det_obs93.5to94.5GHz_15dB_3.67T_center94.0Ghz_Amp0.4_varypumpFreq_93.5to94.1GHz_pumpamp0.5"
+
 filename_in=input_directory+'\\'+input_filename
 
 #filename_in="C:/Users/evsal/Google Drive/MagLab/Frank_Natia/CoAPSO_1uM_08092022/08162022/5uM_CoPhen_50K_10dB_pfT1_08162022_5"
@@ -249,7 +252,7 @@ class load_data():
         else:
             pass
 
-        for i in range(0,self.n_signals):
+        for i in range(0,np.shape(self.data_in)[1]):
             #print(self.data_in[i][0][0:100])
             xf,yf=self.fourier_fcn(self.transient_axis[self.integration_indices[0]:self.integration_indices[1]],self.data_in[0][i][self.integration_indices[0]:self.integration_indices[1]],self.data_in[1][i][self.integration_indices[0]:self.integration_indices[1]],self.sampling,self.fourier_freq_add,self.fourier_freq)
             self.fft_xf.append(xf)
@@ -403,6 +406,7 @@ class load_data():
 
 if __name__=='__main__':
     xxx=load_data(filename_in)
+    print(filename_in)
     xxx.im_re_magn=True
     #xxx.avg_exp=False
     xxx.fourier_on=True
