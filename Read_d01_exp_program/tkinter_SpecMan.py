@@ -56,6 +56,7 @@ class App(tk.Tk):
         self.im_re_magn=False
         self.vlines=True
         self.avg_exp=False
+        self.fourier_on=False
 
         # place a button on the root window
         ttk.Button(self,
@@ -81,8 +82,15 @@ class App(tk.Tk):
         ttk.Button(self,
                 text='Plotly',width=20,
                 command=lambda:[self.plot_plotly_fcn(self.data_objects)]
-                ).place(x=20, y=500)#grid(row=0,column=1)#,expand=True)
+                ).place(x=20, y=550)#grid(row=0,column=1)#,expand=True)
+        
+        ttk.Button(self,
+                text='Swap imag/real',width=20,
+                command=lambda:[self.swap_IR_tkinter(self.data_objects)]
+                ).place(x=20, y=600)#grid(row=0,column=1)#,expand=True)
 
+
+ 
 
         save_figure_filename_label = Label(self, text="save figure filename",)
         save_figure_filename_label.place(x=20, y=170)
@@ -91,7 +99,7 @@ class App(tk.Tk):
         self.save_figure_filename.place(x=20, y=205)#grid(column=0, row=0)
 
         ttk.Button(self,
-                text='Save Transient figure',width=20,
+                text='Save transient figure',width=20,
                 command=lambda:[self.save_transient_figure()]
                 ).place(x=20, y=300)#grid(row=0,column=1)#,expand=True)
 
@@ -116,7 +124,7 @@ class App(tk.Tk):
                 text='not averaged',width=20,
                 command=lambda:[self.average_fcn()]
                 )
-        self.toggle_avg_exp_button.place(x=550, y=500)#grid(row=0,column=1)#,expand=True)
+        self.toggle_avg_exp_button.place(x=750, y=450)#grid(row=0,column=1)#,expand=True)
 
 
         self.toggle_vlines_button=ttk.Button(self,
@@ -125,6 +133,19 @@ class App(tk.Tk):
                 )
         self.toggle_vlines_button.place(x=750, y=350)#grid(row=0,column=1)#,expand=True)
 
+        self.toggle_fourier_button=ttk.Button(self,
+                text='Fourier off',width=18,
+                command=lambda:[self.apply_fourier()]
+                )
+        self.toggle_fourier_button.place(x=525, y=515)#grid(row=0,column=1)#,expand=True)
+
+         
+
+        save_figure_filename_label = Label(self, text=u"ctr freq \u2193",)
+        save_figure_filename_label.place(x=540, y=570)
+
+
+
         self.data_objects=[]
 
         data_entry_inst = Label(self, text="file paths as comma separated plain text",font=('TkDefaultFont 12'))
@@ -132,7 +153,7 @@ class App(tk.Tk):
 
         #text entry box for filenames
         self.temp_in_txt = Entry(self,width=20,font=('TkDefaultFont 20'))
-        self.temp_in_txt.insert(0, "C:/Users/evsal/Google Drive/MagLab/short_biradical_wintyer_break/1mM/ChirpEcho_4dB_93.5to94.5_t90_1.6us_100Kshots_holeat94.02")
+        self.temp_in_txt.insert(0, "C:/Users/esalerno/Google Drive/MagLab/short_biradical_wintyer_break/1mM/ChirpEcho_4dB_93.5to94.5_t90_1.6us_100Kshots_holeat94.02")
         self.temp_in_txt.place(x=2, y=40)#grid(column=0, row=0)
 
         set_baseline_lims = Label(self, text="baseline limits (ns) 1, 2")
@@ -168,27 +189,26 @@ class App(tk.Tk):
         self.last_trace_entry.place(x=850, y=190)#grid(column=0, row=0)
         self.last_trace_entry.insert(0, "end")
 
-
-
-
         describe_x_label_label = Label(self, text="desired x-axis label")
         describe_x_label_label.place(x=270, y=480)
         self.x_label_in = Entry(self,width=15,font=('TkDefaultFont 20'))
         self.x_label_in.place(x=270, y=520)#grid(column=0, row=0)
 
-        describe_ops_label = Label(self, text="x-axis operations (read->):\n *x  /x  +x  -x  *xex  *xe-x")
+        describe_ops_label = Label(self, text="x-axis operations (read->):\n *x  /x  +x  -x  *xex  *xe-x",font=("Arial", 12))
         describe_ops_label.place(x=270, y=560)
         self.math_ops_in = Entry(self,width=15,font=('TkDefaultFont 20'))
         self.math_ops_in.place(x=270, y=610)#grid(column=0, row=0)
 
         #########################save data out########################
         ttk.Button(self,
-                text='Save .txt file',width=20,
+                text='Save integrated .txt',width=20,
                 command=lambda:[save_data_fcn(self.data_objects)]
                 ).place(x=20, y=350)#grid(row=0,column=1)#,expand=True)
 
-
-
+        ttk.Button(self,
+                text='Save transient .txt',width=20,
+                command=lambda:[save_trans_data_fcn(self.data_objects)]
+                ).place(x=20, y=400)#grid(row=0,column=1)#,expand=True)
 
         ######################open new window for matplotlib plot########################
         #self.plottt()
@@ -198,13 +218,11 @@ class App(tk.Tk):
         #       )
         #self.plot_new_window.place(x=800, y=600)#grid(row=0,column=1)#,expand=True)
 
-
-
         self.new_plot_window_int = ttk.Button(self, text="Open integrated plot",width=20,  command=lambda:[self.new_plot_window_fcn(which_plot='integrated')])
-        self.new_plot_window_int.place(x=20, y=450)
+        self.new_plot_window_int.place(x=20, y=500)
         
         self.new_plot_window_trans = ttk.Button(master=self, text="Open transient plot", width=20, command=lambda:[self.new_plot_window_fcn(which_plot='transient')])
-        self.new_plot_window_trans.place(x=20, y=400)
+        self.new_plot_window_trans.place(x=20, y=450)
 
         ####################Fit t1t2 options
         OPTIONS = ["None","t1","t2","2t1","2t2"] 
@@ -213,22 +231,38 @@ class App(tk.Tk):
         self.fit_type.set(OPTIONS[0]) # default value
 
         w = OptionMenu(self, self.fit_type, *OPTIONS)
-        w.place(x=750, y=480)
+        w.place(x=750, y=530)
         self.global_fit_type='None'
         self.fit_guess=[]
 
         self.enter_fit_guess = Entry(self,width=15,font=('TkDefaultFont 20'))
-        self.enter_fit_guess.place(x=750, y=530)#grid(column=0, row=0)
+        self.enter_fit_guess.place(x=750, y=580)#grid(column=0, row=0)
         #self.enter_fit_guess.insert(0, "end")
 
         self.fit_data = Label(self, text="fit t1 or t2")
-        self.fit_data.place(x=750, y=445)
+        self.fit_data.place(x=750, y=495)
 
         self.fit_label = Label(self, text="")
-        self.fit_label.place(x=730, y=570)
+        self.fit_label.place(x=730, y=620)
 
         self.okaybutton = ttk.Button(self, text="Confirm", command=self.update_fit)
-        self.okaybutton.place(x=850, y=480)
+        self.okaybutton.place(x=850, y=530)
+
+        ####################fourier options
+
+        FREQ_OPTIONS = ["THz","GHz","MHz","kHz","Hz"] 
+
+        self.enter_add_number = Entry(self,width=10,font=('TkDefaultFont 20'))
+        self.enter_add_number.place(x=550, y=610)#grid(column=0, row=0)
+
+        self.fft_freq = StringVar(self)
+        self.fft_freq.set(FREQ_OPTIONS[1]) # default value
+
+        self.freq_choice = OptionMenu(self, self.fft_freq, *FREQ_OPTIONS)
+        self.freq_choice.place(x=630, y=560)
+
+        self.frequency_chosen="GHz"
+        self.number_to_add=0
 
         ###########for console in gui###################
         self.log_widget = ScrolledText(self, height=9, width=135, font=("consolas", "10", "normal"))
@@ -236,13 +270,9 @@ class App(tk.Tk):
         self.redirect_logging()
 
 
-
-
-
     def update_fit(self):
         for i in range(0,len(self.data_objects)):
             self.data_objects[i].update_data_fcn(self.bl1,self.bl2,self.i1,self.i2,self.math_ops_in.get(),self.first_trace_entry.get(),self.last_trace_entry.get())
-
 
         self.global_fit_type=self.fit_type.get()
 
@@ -303,6 +333,24 @@ class App(tk.Tk):
         toggle_avg_exp(self.data_objects)
         self.update_plots()    
     
+    def apply_fourier(self):
+        print('***adjust fourier cutoff with integration limits\n***baseline does nothing for fourier transform\n')
+
+        #Change the transient plot to im/re to be clear about where data is coming from
+        if self.im_re_magn==False:
+            self.re_im_magn_fcn()
+
+
+        self.fourier_on= not self.fourier_on
+        if self.fourier_on==True:
+            self.toggle_fourier_button['text']='fourier on'
+        else:
+            self.toggle_fourier_button['text']='fourier off'
+
+
+        self.update_fourier_info()
+        toggle_fourier(self.data_objects,self.number_to_add,self.frequency_chosen)
+        self.update_plots()    
             
     def vlines_fcn(self):
         self.vlines= not self.vlines
@@ -312,6 +360,10 @@ class App(tk.Tk):
             self.toggle_vlines_button['text']='vlines off'
 
         self.make_the_plots()
+
+    def swap_IR_tkinter(self,data_objects):
+        swap_IR(data_objects)
+        self.update_plots()  
 
 
 
@@ -355,10 +407,13 @@ class App(tk.Tk):
         else:
             self.bl2=isnumeric(self.bl2_txt.get())*1e-9
 
-        #print(self.i1,self.i2,self.bl1,self.bl2)
+
+        self.update_fourier_info()
+        update_fourier(self.data_objects,self.number_to_add,self.frequency_chosen)
 
         for i in range(0,len(self.data_objects)):
             self.data_objects[i].update_data_fcn(self.bl1,self.bl2,self.i1,self.i2,self.math_ops_in.get(),self.first_trace_entry.get(),self.last_trace_entry.get())
+        
         
         '''
         #***********Plot integrated figure*****************
@@ -368,11 +423,28 @@ class App(tk.Tk):
         self.integrated_fig.get_tk_widget().place(x=350, y=400)#grid(row=2, column=4)#, ipadx=40, ipady=20)    
         '''
         self.make_the_plots()
+    
+    
+    def update_fourier_info(self):
+        #get floats from string and check if its numeric
+        def isnumeric(value):
+            x=re.findall('\d*\.?\d+',value)
+            if len(x)>1:
+                return False
+            else:
+                pass
+            try:
+                float(x[0])
+                return float(x[0])
+            except:
+                return False
 
-        #for i in range(0,len(self.data_objects)):
-        #    print(np.shape(self.data_objects[i].active_integ_data))  
-
-
+        self.frequency_chosen=self.fft_freq.get()
+       
+        if not isnumeric(self.enter_add_number.get()):
+            self.number_to_add=0
+        else:
+            self.number_to_add=isnumeric(self.enter_add_number.get())
 
     def  plot_plotly_fcn(self,data_objects):
             #import plotly.express as px
@@ -442,18 +514,11 @@ class App(tk.Tk):
         else:
             x_label_integ=False
 
-
-        #if self.normalize==True:
-        #    self.integrated_fig = FigureCanvasTkAgg(plot_integrated_norm(self.data_objects),  master = self)  
-        #else:
         self.integrated_fig = FigureCanvasTkAgg(plot_integrated(self.data_objects,x_label_in=x_label_integ,fit_data=self.global_fit_type,guess=self.fit_guess),  master = self)  
         
         self.integrated_fig.draw()
         # placing the canvas on the Tkinter window
         self.integrated_fig.get_tk_widget().place(x=350, y=250)#grid(row=2, column=4)#, ipadx=40, ipady=20)    
-        #toolbar = NavigationToolbar2Tk(integrated_fig, window, pack_toolbar=False)
-        #toolbar.grid(row=1,column=4)
-
 
 
     def open_data_protocol(self):
@@ -472,12 +537,15 @@ class App(tk.Tk):
             if filenames_list[i][-4:]=='.dat' or filenames_list[i][-4:]=='.exp' or filenames_list[i][-4:]=='.d01':
                 filenames_list[i]= filenames_list[i][:-4]
 
-        #Set global class variable
-        self.filenames=filenames_list
+        #Remove duplicates from the list
+        self.filenames = []
+        [self.filenames.append(x) for x in filenames_list if x not in self.filenames]
+        if len(filenames_list)!=len(self.filenames):
+            print('***you only need to select one of each file, ignoring extensions***')
 
         #Check if the files desired actually exist
         files_exist=[]
-        for x in filenames_list:
+        for x in self.filenames:
             if os.path.isfile(x+'.d01') and os.path.isfile(x+'.exp'):
                 files_exist.append(True)
             elif os.path.isfile(x+'.d01') and not os.path.isfile(x+'.exp'): 
@@ -499,7 +567,7 @@ class App(tk.Tk):
         self.toggle_vlines_button['text']='vlines on'
          
         if all(files_exist):  
-            self.data_objects=create_data_objects(filenames_list)
+            self.data_objects=create_data_objects(self.filenames)
             for i in range(0,len(self.data_objects)):
                 self.data_objects[i].update_data_fcn(self.bl1,self.bl2,self.i1,self.i2,self.math_ops_in.get(),self.first_trace_entry.get(),self.last_trace_entry.get())
             self.make_the_plots()
@@ -587,10 +655,8 @@ class PrintLogger():  # create file like object #did say PrintLogger(object)???
         self.textbox = textbox  # keep ref
 
     def write(self, text):
-        #self.textbox.configure(state="normal")  # make field editable
         self.textbox.insert("end", text)  # write text to textbox
         self.textbox.see("end")  # scroll to end
-        #self.textbox.configure(state="disabled")  # make field readonly
 
     def flush(self):  # needed for file like object
         pass
@@ -607,14 +673,8 @@ if __name__ == "__main__":
     app = App()
     app.mainloop()
 
+    def on_closing():
+        #close the tkinter window
+        app.destroy()
+    app.protocol("WM_DELETE_WINDOW", on_closing)
 
-'''
-#################Close tkinter window##################
-def on_closing():
-    #Cancel the after protocol
-    #window.after_cancel(after_id)
-    #close the tkinter window
-    app.destroy()
-app.protocol("WM_DELETE_WINDOW", on_closing)
-###############################################################################
-'''

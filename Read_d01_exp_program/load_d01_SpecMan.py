@@ -11,16 +11,9 @@ import matplotlib.pyplot as plt
 
 
 
+#This is for testing only this script
 input_directory=r'C:\Users\evsal\Google Drive\MagLab\LuPO4_Eu2plus'
-#input_directory=r'C:\Users\evsal\Google Drive\MagLab\Frank_Natia\CoAPSO_1uM_08092022\08162022'
-
 input_filename='Eu2LuPO4_5K_15dB_ELDOR_93.5to94.5GHz_ctr94GHz'
-input_filename='Eu2LuPO4_5K_15dB_t2_3.312T_T2'
-#input_filename='1uM_CoAPSO_5K_30dB_FSE_6.8to6.2T'
-#input_filename='5uM_CoPhen_50K_10dB_pfT1_08162022_5'
-
-
-
 filename_in=input_directory+'\\'+input_filename
 
 

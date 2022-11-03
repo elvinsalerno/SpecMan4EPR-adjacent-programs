@@ -114,7 +114,7 @@ def plot_the_magn_transients(data_objects,i1,i2,bl1,bl2,DPI=100,plot_vlines=True
                 pass
 
 
-    plt.xlabel(data_objects[0].units_list[0])
+    plt.xlabel('ns')#data_objects[0].units_list[0])
     plt.ylabel('magnitude')
     plt.subplots_adjust(bottom=0.25,left=0.25)
 
@@ -146,6 +146,19 @@ def toggle_avg_exp(data_objects,):
         data_objects[i].avg_exp= not data_objects[i].avg_exp
         data_objects[i].set_active_integ_data()  
 
+def toggle_fourier(data_objects,freq_add,fourier_freq):
+    for i in range (0,len(data_objects)):
+        data_objects[i].fourier_on= not data_objects[i].fourier_on
+        update_fourier(data_objects,freq_add,fourier_freq)
+def update_fourier(data_objects,freq_add,fourier_freq):
+    for i in range (0,len(data_objects)):
+        data_objects[i].fourier_freq_add=freq_add
+        data_objects[i].fourier_freq=fourier_freq
+        data_objects[i].do_fourier()
+
+        #data_objects[i].set_active_integ_data()
+
+
 def plot_integrated(data_objects,DPI=100,x_label_in=False,fit_data='None',guess=[],timescale='none'):
     plt.close(3)
     #this plots the integrated
@@ -174,11 +187,13 @@ def plot_integrated(data_objects,DPI=100,x_label_in=False,fit_data='None',guess=
                     plt.plot(data_objects[i].exp_axis_modded[:], xxx[j,k,:])
     """
 
-
-    if x_label_in==False:
-        plt.xlabel(data_objects[0].units_list[0])
-    else:
+    if x_label_in!=False:
         plt.xlabel(x_label_in)
+    elif data_objects[0].fourier_on==True:
+        plt.xlabel(data_objects[0].fourier_freq)
+    else:# x_label_in==False:
+        plt.xlabel(data_objects[0].units_list[0])
+
 
 
     plt.ylabel('intensity')
@@ -196,6 +211,12 @@ def handle_fitted(data_objects,fit_data='None',guess=[],timescale='none'):
         data_objects[i].fit_fcn_handler(fit_data=fit_data,guess=guess,timescale=timescale)
         for j in range(0,len(data_objects[i].fitted_x_arr)):
             plt.plot(data_objects[i].fitted_x_arr[j],data_objects[i].fitted_y_arr[j],'r--')
+
+def swap_IR(data_objects):    
+    for i in range(0,len(data_objects)):
+        #print('yes')
+        if data_objects[i].I_or_T == "T" and len (np.shape(data_objects[i].data_in))==3 and np.shape(data_objects[i].data_in)[0]==2:
+            data_objects[i].swap_IR()
 
 
 def save_fig_fcn(figurino,filename_to_save="saved_figure"):
@@ -306,21 +327,72 @@ def save_data_fcn(data_objects):
             np.savetxt(f, a, delimiter=',', header=HEAD,comments='n_signals,n_x,n_y\n'+','.join(map(str,np.shape(data_objects[i].active_integ_data)))+'\n')#comments='(x),(y)*'+str(np.shape(data_objects[i].active_integ_data)[2])+'\n')
             f.close()
 
+def save_trans_data_fcn(data_objects):
+    ##############################################################################
+    ##############################save file out###################################
+    
+    for i in range(0,len(data_objects)):
+        ##################################
+        import os
+        #Get directory where this script is running,
+        #Then add '\data_out' to it for desired directory
+        MYDIR = [(os.path.dirname(__file__)),'data_out']
+        MYDIR =  '\\'.join(MYDIR)
+        # If folder doesn't exist, then create it.
+        if not os.path.isdir(MYDIR):
+            os.makedirs(MYDIR)
+            print("created folder : ", MYDIR)
+        else:
+            pass
+            #print(MYDIR, "folder already exists.")
+        #################################
 
-#map(str, list_int)
+        input_directory=MYDIR
+
+        filenameout=(os.path.basename(data_objects[i].filename))
+        filenameout1="".join(["\\",filenameout])
+        filenameoutcomby=input_directory+filenameout1+'_trans_out.txt'
+
+        print('file saved:',filenameoutcomby)
+        data_labels=data_objects[i].signal_labels
+
+        if data_objects[i].I_or_T=='T':
+            a=[]
+            xxx=np.array(data_objects[i].data_in)
+            for j in range(0,np.shape(xxx)[0]):
+                for k in range (0,np.shape(xxx)[1]):
+                    a.append(xxx[j,k,:])
+            a=np.array(a).T
+            a=np.insert(a,0,data_objects[i].transient_axis,axis=1)
+            data_labels=(data_labels)*np.shape(xxx)[1]
+            HEAD='s'+','+",".join(data_labels)
+            f = open(filenameoutcomby, "w")
+
+            x_axis=", ".join(map(str,(data_objects[i].exp_axes[0].tolist())[:]))
+            units=data_objects[i].units_list[0]
+            if units [-1]=='s':
+                units='s'
+
+            np.savetxt(f, a, delimiter=',', header=HEAD,comments='experimental axis: '+str(units)+'\n'+'n_signals,n_x,n_y\n'+','.join(map(str,np.shape(xxx)))+'\n'+x_axis+'\n')#comments='(x),(y)*'+str(np.shape(data_objects[i].active_integ_data)[2])+'\n')
+            f.close()
+        else:
+            print('file not transient')
+        
+
 if __name__=='__main__':
     data_objects=create_data_objects(filename_list)
-    #plot_the_re_im_transients(data_objects,0,100e-9,0,100e-9)
+    #swap_IR(data_objects)
+    plot_the_re_im_transients(data_objects,0,100e-9,0,100e-9)
     #plot_the_magn_transients(data_objects)
     #plot_integrated(data_objects)
     #plot_plotly(data_objects)
     #toggle_re_im_magn(data_objects)
-    plot_integrated(data_objects,fit_data='t2',guess=[],timescale='ns')
+    #plot_integrated(data_objects,fit_data='t2',guess=[],timescale='ns')
     #fit_data_and_plot(data_objects,fit_data='t2',guess=[],timescale='ns')
-    
+
     plt.show()
     plt.close()
-    #save_data_fcn(data_objects)
+    #save_trans_data_fcn(data_objects)
 
     #save_fig_fcn(plot_the_magn_transients(data_objects,0,100e-9,0,100e-9,DPI=300))
 
