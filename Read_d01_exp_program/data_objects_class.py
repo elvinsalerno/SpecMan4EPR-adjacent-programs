@@ -1,10 +1,15 @@
 
 #This is for testing only this script
-input_directory=r'C:\Users\evsal\Google Drive\MagLab\LuPO4_Eu2plus'
+input_directory=r'C:\Users\esalerno\Google Drive\MagLab\LuPO4_Eu2plus'
 input_filename='Eu2LuPO4_5K_15dB_ELDOR_93.5to94.5GHz_ctr94GHz'
+
+
+#input_directory=r"C:\Users\esalerno\Google Drive\MagLab\short_biradical_wintyer_break\1mM"
+#input_filename="ChirpEcho_4dB_93.5to94.5_t90_1.6us_100Kshots_holeat94.02"
+
 filename_in=input_directory+'\\'+input_filename
 
-filename_in="C:/Users/evsal/Google Drive/MagLab/Frank_Natia/CoAPSO_1uM_08092022/08162022/5uM_CoPhen_50K_10dB_pfT1_08162022_5"
+#filename_in="C:/Users/evsal/Google Drive/MagLab/Frank_Natia/CoAPSO_1uM_08092022/08162022/5uM_CoPhen_50K_10dB_pfT1_08162022_5"
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -43,6 +48,13 @@ class load_data():
         self.im_re_magn=False
         self.avg_exp=False
         self.active_integ_data=[]
+
+        self.fourier_on=False
+        self.fft_xf=[]
+        self.fft_yf=[]
+        self.fourier_freq_add=0
+        self.fourier_freq="GHz"
+
         
         #Dictionary defining essential unit orders
         self.units_indices={"p":1e-12,"n":1e-9,"u":1e-6,"m":1e-3,"k":1e3,"M":1e6,"G":1e9}
@@ -72,7 +84,6 @@ class load_data():
         return magn
 
 
-
     #fcn to find the index of number in array which is closest to specified
     def closest_idx_fcn(self,input_arr,specified):
         specific_value=min(input_arr, key=lambda x:abs(x-specified))
@@ -99,7 +110,6 @@ class load_data():
                 self.data_BL_corr[i,j]=self.data_in[i,j]-avg
         
 
-
     def apply_integration_fcn(self,data_arr):
         temp_integrated_arr=[]
         for j in range(0,len(data_arr)):
@@ -107,8 +117,10 @@ class load_data():
             integs=np.sum(points_for_integration)
             temp_integrated_arr.append(integs)
         return np.array(temp_integrated_arr)
-
     
+
+    def swap_IR(self):
+        self.data_in[[0,1]]=self.data_in[[1,0]]
 
     def do_integration(self):
         if self.I_or_T=="T":
@@ -141,10 +153,20 @@ class load_data():
             else:
                 self.active_integ_data=[self.integrated_arr[-1]]
 
-        #average the data array if necessary        
+        if self.fourier_on==True and self.I_or_T=='T':
+            self.do_fourier()
+            self.active_integ_data=self.fft_yf
+            if self.normalize==True:
+                self.active_integ_data=self.active_integ_data/np.amax(self.active_integ_data)
+        else:
+            pass
+
+    
         if self.avg_exp==True:
             if len(np.shape(self.active_integ_data)) >=3:
                 self.active_integ_data=np.mean(self.active_integ_data,axis=2)
+            elif self.fourier_on==True:
+                self.active_integ_data=[np.mean(self.active_integ_data,axis=0)]
         else:
             pass
 
@@ -153,7 +175,6 @@ class load_data():
         last_trace=last_trace.replace(" ", "")
 
         #If they're not numbers, then set from 0:end
-
         if first_trace.isdigit()==False or first_trace=='':
             first_trace='0'
         if last_trace.isdigit()==False or last_trace=='':
@@ -166,6 +187,9 @@ class load_data():
                 xxx.append(self.active_integ_data[i][int(first_trace):int(last_trace)])
             self.exp_axis_modded=self.exp_axis_modded[int(first_trace):int(last_trace)]
             self.active_integ_data=np.array(xxx)
+        #if using fourier data then just set it to fft_xf
+        if self.fourier_on==True:
+            self.exp_axis_modded=self.fft_xf[0]#self.transient_axis[self.integration_indices[0]:self.integration_indices[1]]
     ###########################
 
 
@@ -179,34 +203,96 @@ class load_data():
 
     #############################
 
+    def fourier_fcn(self,times_in,re_in,im_in,sampling=500e-12,f_add=94,frequency='GHz'):    
+        times=times_in
+        data_im=im_in
+        data_re=re_in
+        
+        T=sampling
+        
+        data = [data_im[i]+ 1j* data_re[i] for i in range(len(data_im)) ]  
+            
+        from scipy.fft import fft, fftfreq
+        # Number of sample points
+        N = len(times)
+
+        y =data-np.mean(data)
+        yf = fft(y)
+        
+        xf = fftfreq(N, T)#[:N//2]
+        
+        yf = np.fft.fftshift(yf)
+        xf = np.fft.fftshift(xf)
+        
+        freq_dict={"THz":1e12,"GHz":1e9,"MHz":1e6,"kHz":1e3,"Hz":1}
+
+        xf=xf/freq_dict[frequency]+f_add
+        
+        yf=(np.sqrt(np.real(yf)**2+np.imag(yf)**2))
+        
+        fix_zero_point=f_add
+        fix_zero='on'
+        if fix_zero=='on':
+            idx = np.where(xf == fix_zero_point)[0][0]
+            avg_point = (yf[idx - 1] + yf[idx +1])/2
+            yf = np.where(xf == fix_zero_point , avg_point , yf)
+
+        else:
+            pass
+        return xf,yf
+
+    def do_fourier(self):
+        self.fft_xf=[]
+        self.fft_yf=[]
+        if self.I_or_T=='I':
+            return
+        else:
+            pass
+
+        for i in range(0,self.n_signals):
+            #print(self.data_in[i][0][0:100])
+            xf,yf=self.fourier_fcn(self.transient_axis[self.integration_indices[0]:self.integration_indices[1]],self.data_in[0][i][self.integration_indices[0]:self.integration_indices[1]],self.data_in[1][i][self.integration_indices[0]:self.integration_indices[1]],self.sampling,self.fourier_freq_add,self.fourier_freq)
+            self.fft_xf.append(xf)
+            self.fft_yf.append(yf)
+        self.fft_xf=np.array(self.fft_xf)
+        self.fft_yf=np.array(self.fft_yf)
+        #for j in range(0,len(data_arr)):
+        #    points_for_integration=data_arr[j,self.integration_indices[0]:self.integration_indices[1]]
+
+    def str_to_math(self,innumb,stringaling):
+        #Remove the whitespace
+        stringaling=stringaling.replace(" ", "")
+        #split the string into a list of operators and numbers
+        res = re.findall(r'[0-9\.]+|[^0-9\.]+', stringaling)
+        #split the list pairwise 
+        www=[res[i:i+2] for i in range(0, len(res), 2)]
+        numby=innumb
+        for i in range(0, len(www)):
+            if 'e-' in www[i][0]:
+                numby=numby*10**(-float(www[i][1]))
+            elif 'e' in www[i][0]:
+                numby=numby*10**(float(www[i][1]))
+            elif "*" in www[i][0]:
+                numby=numby*float(www[i][1])
+                #*=float(www[i][1])
+            elif "/" in www[i][0]:
+                numby=numby/float(www[i][1])
+            elif "+" in www[i][0]:
+                numby=numby+float(www[i][1])
+            elif "-" in www[i][0]:
+                numby=numby-float(www[i][1])
+        return numby
 
     def modify_integ_x_axis(self,string_in):
-        def str_to_math(innumb,stringaling):
-            #Remove the whitespace
-            stringaling=stringaling.replace(" ", "")
-            #split the string into a list of operators and numbers
-            res = re.findall(r'[0-9\.]+|[^0-9\.]+', stringaling)
-            #split the list pairwise 
-            www=[res[i:i+2] for i in range(0, len(res), 2)]
-            numby=innumb
-            for i in range(0, len(www)):
-                if 'e-' in www[i][0]:
-                    numby=numby*10**(-float(www[i][1]))
-                elif 'e' in www[i][0]:
-                    numby=numby*10**(float(www[i][1]))
-                elif "*" in www[i][0]:
-                    numby=numby*float(www[i][1])
-                    #*=float(www[i][1])
-                elif "/" in www[i][0]:
-                    numby=numby/float(www[i][1])
-                elif "+" in www[i][0]:
-                    numby=numby+float(www[i][1])
-                elif "-" in www[i][0]:
-                    numby=numby-float(www[i][1])
-            return numby
         #change the x axis, take the data in and copy it, then see if the matching units 
         #are relevant 
-        self.exp_axis_modded=str_to_math(self.exp_axes[0].copy()/self.check_units(self.units_list[0][0]),string_in)
+        #print(self.fft_xf)
+        if self.fourier_on==True:
+            self.exp_axis_modded=self.fft_xf#np.array(self.transient_axis)
+            self.exp_axis_modded=self.str_to_math(self.exp_axis_modded,string_in)
+        else:
+            self.exp_axis_modded=self.str_to_math(self.exp_axes[0].copy()/self.check_units(self.units_list[0][0]),string_in)
+
 
 
     def update_data_fcn(self,bl1,bl2,il1,il2,mathstring,first_trace_in=str(0),last_trace_in=str(-1)):
@@ -215,11 +301,12 @@ class load_data():
             self.apply_baseline_correction()
             self.closest_idx_integration(il1,il2)
 
-        self.do_integration()
-        self.set_active_integ_data()
+        #update_fourer
 
-        
+        self.do_integration()
         self.modify_integ_x_axis(mathstring)
+        self.set_active_integ_data()
+        
         self.set_n_traces(first_trace_in,last_trace_in)
 
     def fit_fcn_handler(self,fit_data='t2',guess=[],timescale='none'):
@@ -317,13 +404,24 @@ class load_data():
 if __name__=='__main__':
     xxx=load_data(filename_in)
     xxx.im_re_magn=True
-    xxx.avg_exp=False
+    #xxx.avg_exp=False
+    xxx.fourier_on=True
+    xxx.avg_exp=True
+    #xxx.do_fourier()
+    #xxx.modify_integ_x_axis('')
+    xxx.swap_IR()
+    xxx.set_active_integ_data()
+    xxx.update_data_fcn(000e-9,10000e-9,0e-9,1500e-9,'*1','0','-1')
 
-    xxx.update_data_fcn(100e-9,700e-9,0e-9,1500e-9,'*1','0','20')
 
+    print(np.shape(xxx.fft_xf))
+    print(np.shape(xxx.exp_axis_modded))
+    print(np.shape(xxx.active_integ_data))
+    print(np.shape(xxx.fft_yf))
     for i in range(0,len(xxx.active_integ_data)):
         #plt.plot(xxx.exp_axes[0],xxx.integrated_arr_norm[i])
         plt.plot(xxx.exp_axis_modded,xxx.active_integ_data[i])
+        #plt.plot(xxx.fft_xf[i],xxx.fft_yf[i])
     plt.show()
     plt.close()
 
