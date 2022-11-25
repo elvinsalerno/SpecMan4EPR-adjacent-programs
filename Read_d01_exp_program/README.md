@@ -1,6 +1,6 @@
 # SpecMan4EPR-adjacent-programs
--Program relevant to SpecMan4EPR software by Boris Epel. 
--Initial code by Elvin Salerno
+-Program for reading .d01 and.exp files from SpecMan4EPR software by Boris Epel. 
+-Python code here written by Elvin Salerno
 
 -All 5 .py files must be in the same directory.
 -Run tkinter_SpecMan.py to open GUI.
